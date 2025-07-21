@@ -1,0 +1,9 @@
+[package]
+name = "api"
+version = "0.1.0"
+edition = "2024"
+
+[dependencies]
+domain = { path = "../domain" }
+logging = { path = "../logging" }
+tracing-subscriber = { version = "0.3.19", features = ["fmt"] }
