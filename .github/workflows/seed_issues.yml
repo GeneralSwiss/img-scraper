@@ -1,0 +1,66 @@
+name: Seed Issues
+
+on:
+  workflow_dispatch:
+    inputs:
+      dry_run:
+        description: 'Set to "false" to actually create issues'
+        required: true
+        default: "true"
+
+permissions:
+  issues: write
+  contents: read
+
+jobs:
+  seed:
+    runs-on: ubuntu-latest
+    env:
+      REPO: ${{ github.repository }}
+      DRY_RUN: ${{ github.event.inputs.dry_run }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install jq
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+
+      - name: Seed issues from backlog/issues.json
+        run: |
+          set -euo pipefail
+
+          issues_file="backlog/issues.json"
+
+          if [[ ! -f "$issues_file" ]]; then
+            echo "Missing $issues_file"
+            exit 1
+          fi
+
+          # Gather current issue titles (all states), excluding pull requests.
+          existing_titles_file="$(mktemp)"
+          gh api "/repos/${REPO}/issues?state=all&per_page=100" \
+            --jq '.[] | select(.pull_request | not) | .title' \
+            > "$existing_titles_file"
+
+          # Process each seeded issue. Skip existing titles for idempotency.
+          jq -c '.[]' "$issues_file" | while IFS= read -r issue; do
+            title="$(jq -r '.title' <<< "$issue")"
+            body="$(jq -r '.body' <<< "$issue")"
+
+            if grep -Fxq "$title" "$existing_titles_file"; then
+              echo "SKIP (exists): $title"
+              continue
+            fi
+
+            if [[ "$DRY_RUN" == "true" ]]; then
+              echo "WOULD CREATE: $title"
+            else
+              gh api "/repos/${REPO}/issues" \
+                -f title="$title" \
+                -f body="$body" >/dev/null
+              echo "CREATED: $title"
+            fi
+          done

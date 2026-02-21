@@ -1,0 +1,10 @@
+[
+  {
+    "title": "Add CI (fmt, clippy, test)",
+    "body": "## Summary\nSet up a CI workflow for this Rust workspace that checks formatting, linting, and tests on pull requests.\n\n## Acceptance criteria\n- A GitHub Actions workflow runs on pull requests and pushes to `mainline`.\n- `cargo fmt --all -- --check` passes in CI.\n- `cargo clippy --workspace --all-targets -- -D warnings` passes in CI.\n- `cargo test --workspace` passes in CI.\n- Workflow output is clear enough to identify which step failed."
+  },
+  {
+    "title": "Make logging initialization idempotent",
+    "body": "## Summary\nEnsure logging setup can be called multiple times safely without panics or duplicate subscriber registration errors.\n\n## Acceptance criteria\n- Calling `logging::setup_logging()` more than once does not panic.\n- Repeated initialization does not register duplicate global subscribers.\n- Behavior is covered by at least one automated test.\n- README or crate docs explain the idempotent behavior briefly."
+  }
+]
